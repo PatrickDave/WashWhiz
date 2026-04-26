@@ -1,0 +1,76 @@
+﻿@model WashWhiz.Models.UserAccount
+
+@{
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 border p-4 shadow-sm rounded bg-light">
+            <h3 class="text-center text-primary mb-4 fw-bold">Create WashWhiz Account</h3>
+
+            <form asp-controller="Account" asp-action="Register" method="post" enctype="multipart/form-data">
+
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Enter your full name" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <input asp-for="PhoneNumber"
+                           class="form-control"
+                           id="phoneInput"
+                           placeholder="09XX-XXX-XXXX"
+                           maxlength="13" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input asp-for="Password" class="form-control" type="password" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Profile Picture</label>
+                    <input type="file" name="profilePic" class="form-control" accept="image/*" />
+                    <div class="form-text text-muted">Upload a clear photo of yourself.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm">Sign Up Now</button>
+            </form>
+
+            <p class="text-center mt-3">
+                Already have an account?
+                <a href="/Account/Login">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const phoneInput = document.getElementById("phoneInput");
+
+        phoneInput.addEventListener("input", function (e) {
+            let value = e.target.value.replace(/\D/g, ""); // remove non-numbers
+
+            // Limit to 11 digits (PH format)
+            value = value.substring(0, 11);
+
+            // Format: 0912-345-6789
+            if (value.length > 7) {
+                value = value.replace(/(\d{4})(\d{3})(\d{0,4})/, "$1-$2-$3");
+            } else if (value.length > 4) {
+                value = value.replace(/(\d{4})(\d{0,3})/, "$1-$2");
+            }
+
+            e.target.value = value;
+        });
+    </script>
+}

@@ -1,0 +1,157 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var userRole = HttpContextAccessor.HttpContext?.Session.GetString("UserRole");
+    var userName = HttpContextAccessor.HttpContext?.Session.GetString("UserName");
+    var profilePicture = HttpContextAccessor.HttpContext?.Session.GetString("ProfilePicture") ?? "default.png";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WashWhiz</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WashWhiz.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm mb-3">
+            <div class="container-fluid">
+
+                <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">
+                    WashWhiz
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+
+                    <!-- LEFT SIDE -->
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+
+                        @if (userRole == "Admin")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold text-primary" href="/Laundry/Dashboard">
+                                    Admin Dashboard
+                                </a>
+                            </li>
+                        }
+                    </ul>
+
+                    <!-- RIGHT SIDE -->
+                    <ul class="navbar-nav ms-auto">
+
+                        @if (!string.IsNullOrEmpty(userName))
+                        {
+                            @if (!string.IsNullOrEmpty(userName))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 fw-semibold"
+                                           href="#"
+                                           id="profileDropdown"
+                                           role="button"
+                                           data-bs-toggle="dropdown"
+                                           aria-expanded="false">
+
+                                        @if (userRole == "Admin")
+                                        {
+                                            <div class="admin-avatar">
+                                                @userName.Substring(0, 1).ToUpper()
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <img src="~/profile_pics/@profilePicture"
+                                                 class="rounded-circle border shadow-sm"
+                                                 style="width: 36px; height: 36px; object-fit: cover;"
+                                                 asp-append-version="true" />
+                                        }
+
+                                        <span>@userName</span>
+                                    </a>
+
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" aria-labelledby="profileDropdown">
+
+                                        @if (userRole == "Admin")
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="/Laundry/Dashboard">
+                                                    Manage Orders
+                                                </a>
+                                            </li>
+
+                                            <li>
+                                                <a class="dropdown-item" href="/Laundry/History">
+                                                    Order History
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="/Account/Profile">
+                                                    Edit Profile
+                                                </a>
+                                            </li>
+
+                                            <li>
+                                                <a class="dropdown-item" href="/Laundry/Dashboard">
+                                                    My Orders
+                                                </a>
+                                            </li>
+
+                                            <li>
+                                                <a class="dropdown-item" href="/Laundry/History">
+                                                    Order History
+                                                </a>
+                                            </li>
+                                        }
+
+                                        <li><hr class="dropdown-divider" /></li>
+
+                                        <li>
+                                            <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
+                                                Logout
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            }
+                        }
+
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - WashWhiz - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

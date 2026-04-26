@@ -1,0 +1,205 @@
+﻿@model IEnumerable<WashWhiz.Models.LaundryOrder>
+
+@{
+    bool isAdmin = ViewBag.IsAdmin == true;
+
+    var totalOrders = Model.Count();
+    var pendingOrders = Model.Count(o => o.Status == "Pending");
+    var washingOrders = Model.Count(o => o.Status == "Washing");
+    var readyOrders = Model.Count(o => o.Status == "Ready");
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">
+            @(isAdmin ? "Admin Dashboard" : "My Orders")
+        </h2>
+
+        <a href="/Laundry/NewOrder" class="btn btn-success shadow-sm">
+            + New Laundry Load
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h6 class="text-muted">Total</h6>
+                <h3 class="fw-bold text-primary">@totalOrders</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h6 class="text-muted">Pending</h6>
+                <h3 class="fw-bold text-warning">@pendingOrders</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h6 class="text-muted">Washing</h6>
+                <h3 class="fw-bold text-info">@washingOrders</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h6 class="text-muted">Ready</h6>
+                <h3 class="fw-bold text-success">@readyOrders</h3>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div id="successToast" class="custom-toast shadow">
+            <div class="toast-body">
+                <strong>Success!</strong> @TempData["SuccessMessage"]
+            </div>
+        </div>
+    }
+
+    <form method="get" action="/Laundry/Dashboard" class="mb-4">
+        <div class="row g-2">
+            <div class="col-md-8">
+                <input type="text" name="searchString" class="form-control" placeholder="Search by customer name..." />
+            </div>
+
+            <div class="col-md-3">
+                <select name="statusFilter" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Washing">Washing</option>
+                    <option value="Ready">Ready</option>
+                </select>
+            </div>
+
+            <div class="col-md-1 d-grid">
+                <button class="btn btn-primary">Go</button>
+            </div>
+        </div>
+    </form>
+
+    @if (!Model.Any())
+    {
+        <div class="card shadow-sm text-center p-5">
+            <h4 class="text-primary fw-bold">No orders found</h4>
+            <p class="text-muted">No laundry orders yet.</p>
+            <a href="/Laundry/NewOrder" class="btn btn-primary">Create Order</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-hover align-middle bg-white orders-table">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Customer Name</th>
+                        <th>Weight</th>
+                        <th>Service</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Date</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="order-row">
+                            <td class="fw-bold">@item.CustomerName</td>
+                            <td>@item.Weight kg</td>
+                            <td>@item.ServiceType</td>
+
+                            <td class="timeline-cell">
+                                <div class="order-timeline">
+                                    <div class="timeline-step @(item.Status == "Pending" || item.Status == "Washing" || item.Status == "Ready" ? "active" : "")">
+                                        <div class="timeline-circle">1</div>
+                                        <small>Pending</small>
+                                    </div>
+
+                                    <div class="timeline-line @(item.Status == "Washing" || item.Status == "Ready" ? "active" : "")"></div>
+
+                                    <div class="timeline-step @(item.Status == "Washing" || item.Status == "Ready" ? "active" : "")">
+                                        <div class="timeline-circle">2</div>
+                                        <small>Washing</small>
+                                    </div>
+
+                                    <div class="timeline-line @(item.Status == "Ready" ? "active" : "")"></div>
+
+                                    <div class="timeline-step @(item.Status == "Ready" ? "active" : "")">
+                                        <div class="timeline-circle">3</div>
+                                        <small>Ready</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="text-center">@item.DateCreated.ToString("MMM dd, yyyy")</td>
+
+                            <td class="actions-cell text-center">
+                                <div class="action-buttons">
+
+                                    @if (isAdmin)
+                                    {
+                                        <form action="/Laundry/UpdateStatus" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                            <input type="hidden" name="status" value="Pending" />
+                                            <button class="action-btn pending" type="submit" title="Set to Pending">P</button>
+                                        </form>
+
+                                        <form action="/Laundry/UpdateStatus" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                            <input type="hidden" name="status" value="Washing" />
+                                            <button class="action-btn washing" type="submit" title="Set to Washing">W</button>
+                                        </form>
+
+                                        <form action="/Laundry/UpdateStatus" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                            <input type="hidden" name="status" value="Ready" />
+                                            <button class="action-btn ready" type="submit" title="Set to Ready">R</button>
+                                        </form>
+
+                                        <form action="/Laundry/CancelOrder" method="post" onsubmit="return confirm('Delete order?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                            <button class="action-btn delete" type="submit" title="Delete Order">×</button>
+                                        </form>
+                                    }
+                                    else if (item.Status == "Pending")
+                                    {
+                                        <form action="/Laundry/CancelOrder" method="post" onsubmit="return confirm('Cancel order?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                            <button class="btn btn-sm btn-danger" type="submit">Cancel</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Locked</span>
+                                    }
+
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script>
+        setTimeout(() => {
+            const toast = document.getElementById("successToast");
+            if (toast) toast.remove();
+        }, 4000);
+    </script>
+}
