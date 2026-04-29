@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WashWhiz.Data;
 
@@ -11,9 +12,11 @@ using WashWhiz.Data;
 namespace WashWhiz.Migrations
 {
     [DbContext(typeof(WashWhizContext))]
-    partial class WashWhizContextModelSnapshot : ModelSnapshot
+    [Migration("20260429001059_AddRoleAndUsernameToUsers")]
+    partial class AddRoleAndUsernameToUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

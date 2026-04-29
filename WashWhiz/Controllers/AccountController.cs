@@ -28,40 +28,49 @@ namespace WashWhiz.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Login")]
-        public IActionResult Login(string email, string password)
+        public IActionResult Login(string role, string email, string username, string password)
         {
-            // Hardcoded admin login
-            if (email == "admin@washwhiz.com" && password == "admin123")
+            // ===================== ADMIN LOGIN LOGIC =====================
+            if (role == "Admin")
             {
-                HttpContext.Session.SetInt32("UserId", 0);
-                HttpContext.Session.SetString("UserName", "Administrator");
-                HttpContext.Session.SetString("UserRole", "Admin");
-                HttpContext.Session.SetString("ProfilePicture", "default.png");
-
-                return RedirectToAction("Index", "Orders");
-            }
-
-            // Normal user login
-            var user = _context.Users
-                .FirstOrDefault(u => u.Email == email && u.Password == password);
-
-            if (user != null)
-            {
-                HttpContext.Session.SetInt32("UserId", user.UserId);
-                HttpContext.Session.SetString("UserName", user.FullName);
-                HttpContext.Session.SetString("UserRole", user.Role);
-                HttpContext.Session.SetString("ProfilePicture", user.ProfilePicture ?? "default.png");
-
-                if (user.Role == "Admin")
+                // Optional: Check database for Admin if not hardcoded
+                var adminUser = _context.Users.FirstOrDefault(u => u.Username == username && u.Password == password && u.Role == "Admin");
+                if (adminUser != null)
                 {
+                    SetUserSession(adminUser);
                     return RedirectToAction("Index", "Orders");
                 }
+            }
+            // ===================== USER LOGIN LOGIC =====================
+            else
+            {
+                var user = _context.Users.FirstOrDefault(u => u.Email == email && u.Password == password);
 
-                return RedirectToAction("Index", "Home");
+                if (user != null)
+                {
+                    SetUserSession(user);
+
+                    // If a User somehow has an Admin role, send them to the Dashboard
+                    if (user.Role == "Admin")
+                    {
+                        return RedirectToAction("Index", "Orders");
+                    }
+
+                    return RedirectToAction("Dashboard", "Laundry");
+                }
             }
 
-            ViewBag.Error = "Invalid email or password.";
+            ViewBag.Error = "Invalid credentials. Please check your " + (role == "Admin" ? "username" : "email") + " and password.";
             return View();
+        }
+
+        // Helper method to keep your code clean
+        private void SetUserSession(UserAccount user)
+        {
+            HttpContext.Session.SetInt32("UserId", user.UserId);
+            HttpContext.Session.SetString("UserName", user.FullName);
+            HttpContext.Session.SetString("UserRole", user.Role ?? "User");
+            HttpContext.Session.SetString("ProfilePicture", user.ProfilePicture ?? "default.png");
         }
 
         // ===================== REGISTER =====================

@@ -184,10 +184,10 @@ footer {
     font-weight: 500;
 }
 
-    .dropdown-item:hover {
-        background: #eef7ff;
-        color: #0d6efd;
-    }
+.dropdown-item:hover {
+    background: #eef7ff;
+    color: #0d6efd;
+}
 
 .dropdown-toggle::after {
     margin-left: 8px;
@@ -197,10 +197,10 @@ footer {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-    .navbar img.rounded-circle:hover {
-        transform: scale(1.08);
-        box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
-    }
+.navbar img.rounded-circle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+}
 
 
 body {
@@ -217,9 +217,9 @@ body {
     flex-direction: column;
 }
 
-    body > .container {
-        flex: 1 0 auto;
-    }
+body > .container {
+    flex: 1 0 auto;
+}
 
 main {
     padding-bottom: 120px;
@@ -710,4 +710,16 @@ main {
         opacity: 0;
         transform: translateY(30px);
     }
+}
+
+/* Added Neri>>:*/
+.active-role {
+    background-color: #0D6EFD !important;
+    color: white !important;
+}
+
+.role-toggle .btn {
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: bold;
 }
