@@ -16,7 +16,8 @@ namespace WashWhiz.Controllers
 
         private bool IsLoggedIn()
         {
-            return HttpContext.Session.GetInt32("UserId") != null ||
+            // Use UserEmail in session to determine logged-in user
+            return !string.IsNullOrEmpty(HttpContext.Session.GetString("UserEmail")) ||
                    HttpContext.Session.GetString("UserRole") == "Admin";
         }
 
@@ -36,10 +37,15 @@ namespace WashWhiz.Controllers
 
             var orders = _context.Orders.AsQueryable();
 
-            if (!IsAdmin())
+            // Exclude Completed from the dashboard for both Admin and Users
+            if (IsAdmin())
             {
-                var userId = HttpContext.Session.GetInt32("UserId");
-                orders = orders.Where(o => o.UserId == userId);
+                orders = orders.Where(o => o.Status != "Completed");
+            }
+            else
+            {
+                var userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
+                orders = orders.Where(o => o.UserEmail == userEmail && o.Status != "Completed");
             }
 
             if (!string.IsNullOrWhiteSpace(searchString))
@@ -54,7 +60,8 @@ namespace WashWhiz.Controllers
 
             ViewBag.IsAdmin = IsAdmin();
 
-            return View(orders.OrderByDescending(o => o.DateCreated).ToList());
+            // Order by OrderDate
+            return View(orders.OrderByDescending(o => o.OrderDate).ToList());
         }
 
         [HttpGet]
@@ -65,6 +72,10 @@ namespace WashWhiz.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
+
+            // Provide flags and session email for the view
+            ViewBag.IsAdmin = IsAdmin();
+            ViewBag.SessionEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
 
             return View();
         }
@@ -79,12 +90,23 @@ namespace WashWhiz.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            var sessionEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
+            var isAdmin = IsAdmin();
+
             if (ModelState.IsValid)
             {
-                var userId = HttpContext.Session.GetInt32("UserId");
+                // If the creator is NOT an admin, force their session email.
+                if (!isAdmin)
+                {
+                    order.UserEmail = sessionEmail;
+                }
+                else
+                {
+                    // Admin-provided UserEmail should remain as entered; ensure non-null
+                    order.UserEmail = order.UserEmail ?? string.Empty;
+                }
 
-                order.UserId = userId ?? 0;
-                order.DateCreated = DateTime.Now;
+                order.OrderDate = DateTime.Now;
                 order.Status = "Pending";
 
                 _context.Orders.Add(order);
@@ -93,6 +115,10 @@ namespace WashWhiz.Controllers
                 TempData["SuccessMessage"] = "Order submitted successfully!";
                 return RedirectToAction("Index");
             }
+
+            // Re-populate view flags when returning view with validation errors
+            ViewBag.IsAdmin = isAdmin;
+            ViewBag.SessionEmail = sessionEmail;
 
             return View(order);
         }
@@ -140,9 +166,9 @@ namespace WashWhiz.Controllers
 
             if (!IsAdmin())
             {
-                var userId = HttpContext.Session.GetInt32("UserId");
+                var userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
 
-                if (order.UserId != userId)
+                if (order.UserEmail != userEmail)
                 {
                     return RedirectToAction("Index");
                 }
@@ -157,6 +183,32 @@ namespace WashWhiz.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        [Route("CompleteOrder")]
+        [Route("Orders/CompleteOrder")] // allow conventional URL too
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteOrder(int id)
+        {
+            var userRole = HttpContext.Session.GetString("UserRole");
+            if (userRole != "Admin")
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = "Completed";
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Order marked as completed.";
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpGet]
         [Route("History")]
         public IActionResult History()
@@ -168,18 +220,21 @@ namespace WashWhiz.Controllers
 
             var orders = _context.Orders.AsQueryable();
 
-            if (!IsAdmin())
+            if (IsAdmin())
             {
-                var userId = HttpContext.Session.GetInt32("UserId");
-                orders = orders.Where(o => o.UserId == userId);
+                // Admin sees all completed orders
+                orders = orders.Where(o => o.Status == "Completed");
+            }
+            else
+            {
+                var userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
+                // User sees only their own completed orders
+                orders = orders.Where(o => o.UserEmail == userEmail && o.Status == "Completed");
             }
 
             ViewBag.IsAdmin = IsAdmin();
 
-            return View(orders
-                .Where(o => o.Status == "Ready")
-                .OrderByDescending(o => o.DateCreated)
-                .ToList());
+            return View(orders.OrderByDescending(o => o.OrderDate).ToList());
         }
     }
 }

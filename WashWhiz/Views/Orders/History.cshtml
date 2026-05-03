@@ -3,6 +3,13 @@
 @{
     bool isAdmin = ViewBag.IsAdmin == true;
     ViewData["Title"] = "Order History";
+
+    string BadgeClass(string status) =>
+        status == "Pending" ? "bg-warning" :
+        status == "Washing" ? "bg-info" :
+        status == "Ready" ? "bg-success" :
+        status == "Completed" ? "bg-secondary" :
+        "bg-primary";
 }
 
 <div class="container mt-4">
@@ -45,9 +52,9 @@
                             <td>@item.Weight kg</td>
                             <td>@item.ServiceType</td>
                             <td>
-                                <span class="badge bg-success">Ready</span>
+                                <span class="badge @BadgeClass(item.Status)">@item.Status</span>
                             </td>
-                            <td>@item.DateCreated.ToString("MMM dd, yyyy")</td>
+                            <td>@item.OrderDate.ToString("MMM dd, yyyy")</td>
                         </tr>
                     }
                 </tbody>

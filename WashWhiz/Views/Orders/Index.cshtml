@@ -16,9 +16,13 @@
             @(isAdmin ? "Admin Dashboard" : "My Orders")
         </h2>
 
-        <a href="/Laundry/NewOrder" class="btn btn-success shadow-sm">
-            + New Laundry Load
-        </a>
+        @* Show New Laundry Load only to admins *@
+        @if (isAdmin)
+        {
+            <a href="/Laundry/NewOrder" class="btn btn-success shadow-sm">
+                + New Laundry Load
+            </a>
+        }
     </div>
 
     <div class="row g-3 mb-4">
@@ -86,7 +90,6 @@
         <div class="card shadow-sm text-center p-5">
             <h4 class="text-primary fw-bold">No orders found</h4>
             <p class="text-muted">No laundry orders yet.</p>
-            <a href="/Laundry/NewOrder" class="btn btn-primary">Create Order</a>
         </div>
     }
     else
@@ -136,39 +139,51 @@
                                 </div>
                             </td>
 
-                            <td class="text-center">@item.DateCreated.ToString("MMM dd, yyyy")</td>
+                            <td class="text-center">@item.OrderDate.ToString("MMM dd, yyyy")</td>
 
                             <td class="actions-cell text-center">
                                 <div class="action-buttons">
 
                                     @if (isAdmin)
                                     {
-                                        <form action="/Laundry/UpdateStatus" method="post">
+                                        <form action="/Laundry/UpdateStatus" method="post" style="display:inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <input type="hidden" name="status" value="Pending" />
                                             <button class="action-btn pending" type="submit" title="Set to Pending">P</button>
                                         </form>
 
-                                        <form action="/Laundry/UpdateStatus" method="post">
+                                        <form action="/Laundry/UpdateStatus" method="post" style="display:inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <input type="hidden" name="status" value="Washing" />
                                             <button class="action-btn washing" type="submit" title="Set to Washing">W</button>
                                         </form>
 
-                                        <form action="/Laundry/UpdateStatus" method="post">
+                                        <form action="/Laundry/UpdateStatus" method="post" style="display:inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <input type="hidden" name="status" value="Ready" />
                                             <button class="action-btn ready" type="submit" title="Set to Ready">R</button>
                                         </form>
 
-                                        <form action="/Laundry/CancelOrder" method="post" onsubmit="return confirm('Delete order?');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                            <button class="action-btn delete" type="submit" title="Delete Order">×</button>
-                                        </form>
+                                        @* When Ready show Complete (C); otherwise allow delete here *@
+                                        @if (item.Status == "Ready")
+                                        {
+                                            <form action="/Laundry/CompleteOrder" method="post" style="display:inline-block;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                                <button class="action-btn complete btn btn-sm btn-success" type="submit" title="Mark as Completed">C</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form action="/Laundry/CancelOrder" method="post" onsubmit="return confirm('Delete order?');" style="display:inline-block;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                                <button class="action-btn delete" type="submit" title="Delete Order">×</button>
+                                            </form>
+                                        }
                                     }
                                     else if (item.Status == "Pending")
                                     {

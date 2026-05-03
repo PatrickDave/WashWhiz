@@ -71,6 +71,9 @@ namespace WashWhiz.Controllers
             HttpContext.Session.SetString("UserName", user.FullName);
             HttpContext.Session.SetString("UserRole", user.Role ?? "User");
             HttpContext.Session.SetString("ProfilePicture", user.ProfilePicture ?? "default.png");
+
+            // Store the user's email so controllers can use UserEmail for ownership
+            HttpContext.Session.SetString("UserEmail", user.Email ?? string.Empty);
         }
 
         // ===================== REGISTER =====================

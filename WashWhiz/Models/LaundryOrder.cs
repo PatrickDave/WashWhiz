@@ -1,26 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace WashWhiz.Models
 {
     public class LaundryOrder
     {
-        [Key]
         public int LaundryOrderId { get; set; }
 
-        [Required]
+        // This connects the order to the User
+        public string UserId { get; set; } = string.Empty;
+        public string UserEmail { get; set; } = string.Empty;
+
         public string CustomerName { get; set; } = string.Empty;
-
-        [Required]
-        [Range(0.1, 100)]
-        public double Weight { get; set; }
-
-        [Required]
+        public decimal Weight { get; set; }
         public string ServiceType { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty; // Pending, Washing, Ready, Completed
 
-        public string Status { get; set; } = "Pending";
+        // For tracking when the load was dropped off
+        public DateTime OrderDate { get; set; } = DateTime.Now;
 
+        // Some controllers/views expect DateCreated
         public DateTime DateCreated { get; set; } = DateTime.Now;
-
-        public int UserId { get; set; }
     }
 }

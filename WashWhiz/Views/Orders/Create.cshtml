@@ -1,5 +1,10 @@
 ﻿@model WashWhiz.Models.LaundryOrder
 
+@{
+    bool isAdmin = ViewBag.IsAdmin == true;
+    string sessionEmail = ViewBag.SessionEmail ?? string.Empty;
+}
+
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
@@ -19,6 +24,20 @@
                             <input asp-for="CustomerName" class="form-control" />
                             <span asp-validation-for="CustomerName" class="text-danger"></span>
                         </div>
+
+                        @* Email: show input for admins; for regular users submit a hidden field with session email *@
+                        @if (isAdmin)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="UserEmail" class="form-label">Customer Email</label>
+                                <input asp-for="UserEmail" class="form-control" />
+                                <span asp-validation-for="UserEmail" class="text-danger"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" name="UserEmail" value="@sessionEmail" />
+                        }
 
                         <div class="mb-3">
                             <label asp-for="Weight" class="form-label">Weight (kg)</label>
