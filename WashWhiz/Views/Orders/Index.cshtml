@@ -146,39 +146,44 @@
 
                                     @if (isAdmin)
                                     {
-                                        <form action="/Laundry/UpdateStatus" method="post" style="display:inline-block;">
+                                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <input type="hidden" name="status" value="Pending" />
                                             <button class="action-btn pending" type="submit" title="Set to Pending">P</button>
                                         </form>
 
-                                        <form action="/Laundry/UpdateStatus" method="post" style="display:inline-block;">
+                                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <input type="hidden" name="status" value="Washing" />
                                             <button class="action-btn washing" type="submit" title="Set to Washing">W</button>
                                         </form>
 
-                                        <form action="/Laundry/UpdateStatus" method="post" style="display:inline-block;">
+                                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <input type="hidden" name="status" value="Ready" />
                                             <button class="action-btn ready" type="submit" title="Set to Ready">R</button>
                                         </form>
 
-                                        @* When Ready show Complete (C); otherwise allow delete here *@
+                                        @* When Ready show Complete using existing tag-helper; otherwise use tag-helper Cancel/Delete *@
                                         @if (item.Status == "Ready")
                                         {
-                                            <form action="/Laundry/CompleteOrder" method="post" style="display:inline-block;">
+                                            <form asp-controller="Orders"
+                                                  asp-action="CompleteOrder"
+                                                  asp-route-id="@item.LaundryOrderId"
+                                                  method="post"
+                                                  style="display:inline-block;">
                                                 @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                                <button class="action-btn complete btn btn-sm btn-success" type="submit" title="Mark as Completed">C</button>
+                                                <button class="action-btn complete btn btn-sm btn-success" type="submit" title="Mark as Completed">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
                                             </form>
                                         }
                                         else
                                         {
-                                            <form action="/Laundry/CancelOrder" method="post" onsubmit="return confirm('Delete order?');" style="display:inline-block;">
+                                            <form asp-controller="Orders" asp-action="CancelOrder" method="post" onsubmit="return confirm('Delete order?');" style="display:inline-block;">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                                 <button class="action-btn delete" type="submit" title="Delete Order">×</button>
@@ -187,7 +192,7 @@
                                     }
                                     else if (item.Status == "Pending")
                                     {
-                                        <form action="/Laundry/CancelOrder" method="post" onsubmit="return confirm('Cancel order?');">
+                                        <form asp-controller="Orders" asp-action="CancelOrder" method="post" onsubmit="return confirm('Cancel order?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.LaundryOrderId" />
                                             <button class="btn btn-sm btn-danger" type="submit">Cancel</button>

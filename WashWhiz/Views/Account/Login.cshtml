@@ -5,6 +5,20 @@
         <div class="col-md-4 border p-4 shadow rounded bg-white">
             <h3 class="text-center mb-4 fw-bold">Login to <span class="text-primary">WashWhiz</span></h3>
 
+            @* Show server-side errors from ViewBag or TempData *@
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @TempData["ErrorMessage"]
+                </div>
+            }
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    @ViewBag.Error
+                </div>
+            }
+
             <div class="role-toggle d-flex p-1 mb-4 bg-light rounded-pill">
                 <button type="button" id="btnUser" class="btn w-50 rounded-pill active-role shadow-sm" onclick="setRole('User')">User</button>
                 <button type="button" id="btnAdmin" class="btn w-50 rounded-pill" onclick="setRole('Admin')">Admin</button>

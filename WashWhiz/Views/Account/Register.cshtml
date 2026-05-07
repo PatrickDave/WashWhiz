@@ -10,15 +10,20 @@
             <h3 class="text-center text-primary mb-4 fw-bold">Create WashWhiz Account</h3>
 
             <form asp-controller="Account" asp-action="Register" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
                     <input asp-for="FullName" class="form-control" placeholder="Enter your full name" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Email Address</label>
                     <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -34,6 +39,13 @@
                 <div class="mb-3">
                     <label class="form-label">Password</label>
                     <input asp-for="Password" class="form-control" type="password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Confirm Password</label>
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -54,6 +66,8 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
     <script>
         const phoneInput = document.getElementById("phoneInput");
 

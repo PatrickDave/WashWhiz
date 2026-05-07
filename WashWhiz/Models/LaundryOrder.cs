@@ -9,6 +9,9 @@ namespace WashWhiz.Models
 
         // This connects the order to the User
         public string UserId { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
         public string UserEmail { get; set; } = string.Empty;
 
         public string CustomerName { get; set; } = string.Empty;
