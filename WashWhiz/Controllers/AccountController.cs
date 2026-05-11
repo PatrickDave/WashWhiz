@@ -33,8 +33,17 @@ namespace WashWhiz.Controllers
             // ===================== ADMIN LOGIN LOGIC =====================
             if (role == "Admin")
             {
-                // Optional: Check database for Admin if not hardcoded
-                var adminUser = _context.Users.FirstOrDefault(u => u.Username == username && u.Password == password && u.Role == "Admin");
+                UserAccount adminUser = null;
+                // Use explicit loop instead of LINQ lambda to find admin
+                foreach (var u in _context.Users)
+                {
+                    if (u.Username == username && u.Password == password && u.Role == "Admin")
+                    {
+                        adminUser = u;
+                        break;
+                    }
+                }
+
                 if (adminUser != null)
                 {
                     SetUserSession(adminUser);
@@ -44,7 +53,16 @@ namespace WashWhiz.Controllers
             // ===================== USER LOGIN LOGIC =====================
             else
             {
-                var user = _context.Users.FirstOrDefault(u => u.Email == email && u.Password == password);
+                UserAccount user = null;
+                // Use explicit loop instead of LINQ lambda to find user
+                foreach (var u in _context.Users)
+                {
+                    if (u.Email == email && u.Password == password)
+                    {
+                        user = u;
+                        break;
+                    }
+                }
 
                 if (user != null)
                 {
@@ -60,7 +78,18 @@ namespace WashWhiz.Controllers
                 }
             }
 
-            ViewBag.Error = "Invalid credentials. Please check your " + (role == "Admin" ? "username" : "email") + " and password.";
+            // Build error message without ternary operator
+            string identityLabel;
+            if (role == "Admin")
+            {
+                identityLabel = "username";
+            }
+            else
+            {
+                identityLabel = "email";
+            }
+
+            ViewBag.Error = "Invalid credentials. Please check your " + identityLabel + " and password.";
             return View();
         }
 
@@ -88,7 +117,7 @@ namespace WashWhiz.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Register")]
-        public async Task<IActionResult> Register(UserAccount user, IFormFile profilePic)
+        public IActionResult Register(UserAccount user, IFormFile profilePic)
         {
             if (ModelState.IsValid)
             {
@@ -106,7 +135,7 @@ namespace WashWhiz.Controllers
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        await profilePic.CopyToAsync(stream);
+                        profilePic.CopyTo(stream);
                     }
 
                     user.ProfilePicture = fileName;
@@ -119,7 +148,7 @@ namespace WashWhiz.Controllers
                 user.Role = "User";
 
                 _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
 
                 TempData["SuccessMessage"] = "Account created successfully! Please log in.";
                 return RedirectToAction("Login");
@@ -154,7 +183,7 @@ namespace WashWhiz.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Profile")]
-        public async Task<IActionResult> Profile(
+        public IActionResult Profile(
     UserAccount updatedUser,
     IFormFile profilePic,
     string currentPassword,
@@ -193,7 +222,7 @@ namespace WashWhiz.Controllers
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    await profilePic.CopyToAsync(stream);
+                    profilePic.CopyTo(stream);
                 }
 
                 user.ProfilePicture = fileName;
@@ -224,7 +253,7 @@ namespace WashWhiz.Controllers
                 user.Password = newPassword;
             }
 
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
 
             HttpContext.Session.SetString("UserName", user.FullName);
             HttpContext.Session.SetString("ProfilePicture", user.ProfilePicture ?? "default.png");

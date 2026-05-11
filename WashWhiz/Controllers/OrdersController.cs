@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
 using WashWhiz.Data;
 using WashWhiz.Models;
 
@@ -35,33 +37,79 @@ namespace WashWhiz.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var orders = _context.Orders.AsQueryable();
+            var result = new List<LaundryOrder>();
+            var isAdmin = IsAdmin();
+            var sessionEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
 
-            // Exclude Completed from the dashboard for both Admin and Users
-            if (IsAdmin())
+            // Collect orders according to admin/user rules (no LINQ/lambda)
+            foreach (var o in _context.Orders)
             {
-                orders = orders.Where(o => o.Status != "Completed");
-            }
-            else
-            {
-                var userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
-                orders = orders.Where(o => o.UserEmail == userEmail && o.Status != "Completed");
+                if (isAdmin)
+                {
+                    if (o.Status != "Completed")
+                    {
+                        result.Add(o);
+                    }
+                }
+                else
+                {
+                    if (o.UserEmail == sessionEmail && o.Status != "Completed")
+                    {
+                        result.Add(o);
+                    }
+                }
             }
 
+            // Apply searchString filter (if provided)
             if (!string.IsNullOrWhiteSpace(searchString))
             {
-                orders = orders.Where(o => o.CustomerName.Contains(searchString));
+                var filtered = new List<LaundryOrder>();
+                foreach (var o in result)
+                {
+                    if (!string.IsNullOrEmpty(o.CustomerName) && o.CustomerName.Contains(searchString))
+                    {
+                        filtered.Add(o);
+                    }
+                }
+                result = filtered;
             }
 
+            // Apply statusFilter (if provided)
             if (!string.IsNullOrWhiteSpace(statusFilter))
             {
-                orders = orders.Where(o => o.Status == statusFilter);
+                var filtered = new List<LaundryOrder>();
+                foreach (var o in result)
+                {
+                    if (o.Status == statusFilter)
+                    {
+                        filtered.Add(o);
+                    }
+                }
+                result = filtered;
             }
 
-            ViewBag.IsAdmin = IsAdmin();
+            ViewBag.IsAdmin = isAdmin;
 
-            // Order by OrderDate
-            return View(orders.OrderByDescending(o => o.OrderDate).ToList());
+            // Sort by OrderDate descending using simple selection sort (explicit loops)
+            for (int i = 0; i < result.Count - 1; i++)
+            {
+                int maxIndex = i;
+                for (int j = i + 1; j < result.Count; j++)
+                {
+                    if (result[j].OrderDate > result[maxIndex].OrderDate)
+                    {
+                        maxIndex = j;
+                    }
+                }
+                if (maxIndex != i)
+                {
+                    var temp = result[i];
+                    result[i] = result[maxIndex];
+                    result[maxIndex] = temp;
+                }
+            }
+
+            return View(result);
         }
 
         [HttpGet]
@@ -133,14 +181,22 @@ namespace WashWhiz.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var order = _context.Orders.FirstOrDefault(o => o.LaundryOrderId == id);
+            LaundryOrder found = null;
+            foreach (var o in _context.Orders)
+            {
+                if (o.LaundryOrderId == id)
+                {
+                    found = o;
+                    break;
+                }
+            }
 
-            if (order == null)
+            if (found == null)
             {
                 return NotFound();
             }
 
-            order.Status = status;
+            found.Status = status;
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = "Order status updated successfully!";
@@ -157,9 +213,17 @@ namespace WashWhiz.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var order = _context.Orders.FirstOrDefault(o => o.LaundryOrderId == id);
+            LaundryOrder found = null;
+            foreach (var o in _context.Orders)
+            {
+                if (o.LaundryOrderId == id)
+                {
+                    found = o;
+                    break;
+                }
+            }
 
-            if (order == null)
+            if (found == null)
             {
                 return NotFound();
             }
@@ -168,13 +232,13 @@ namespace WashWhiz.Controllers
             {
                 var userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
 
-                if (order.UserEmail != userEmail)
+                if (found.UserEmail != userEmail)
                 {
                     return RedirectToAction("Index");
                 }
             }
 
-            _context.Orders.Remove(order);
+            _context.Orders.Remove(found);
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = IsAdmin()
@@ -187,7 +251,7 @@ namespace WashWhiz.Controllers
         [Route("CompleteOrder")]
         [Route("Orders/CompleteOrder")] // allow conventional URL too
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CompleteOrder(int id)
+        public IActionResult CompleteOrder(int id)
         {
             var userRole = HttpContext.Session.GetString("UserRole");
             if (userRole != "Admin")
@@ -195,15 +259,24 @@ namespace WashWhiz.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
+            LaundryOrder found = null;
+            foreach (var o in _context.Orders)
+            {
+                if (o.LaundryOrderId == id)
+                {
+                    found = o;
+                    break;
+                }
+            }
+
+            if (found == null)
             {
                 return NotFound();
             }
 
-            order.Status = "Completed";
-            _context.Update(order);
-            await _context.SaveChangesAsync();
+            found.Status = "Completed";
+            _context.Update(found);
+            _context.SaveChanges();
 
             TempData["SuccessMessage"] = "Order marked as completed.";
             return RedirectToAction(nameof(Index));
@@ -218,23 +291,59 @@ namespace WashWhiz.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var orders = _context.Orders.AsQueryable();
+            var all = new List<LaundryOrder>();
+            foreach (var o in _context.Orders)
+            {
+                all.Add(o);
+            }
 
+            var result = new List<LaundryOrder>();
             if (IsAdmin())
             {
                 // Admin sees all completed orders
-                orders = orders.Where(o => o.Status == "Completed");
+                foreach (var o in all)
+                {
+                    if (o.Status == "Completed")
+                    {
+                        result.Add(o);
+                    }
+                }
             }
             else
             {
                 var userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
                 // User sees only their own completed orders
-                orders = orders.Where(o => o.UserEmail == userEmail && o.Status == "Completed");
+                foreach (var o in all)
+                {
+                    if (o.UserEmail == userEmail && o.Status == "Completed")
+                    {
+                        result.Add(o);
+                    }
+                }
             }
 
             ViewBag.IsAdmin = IsAdmin();
 
-            return View(orders.OrderByDescending(o => o.OrderDate).ToList());
+            // Sort by OrderDate descending (explicit loops)
+            for (int i = 0; i < result.Count - 1; i++)
+            {
+                int maxIndex = i;
+                for (int j = i + 1; j < result.Count; j++)
+                {
+                    if (result[j].OrderDate > result[maxIndex].OrderDate)
+                    {
+                        maxIndex = j;
+                    }
+                }
+                if (maxIndex != i)
+                {
+                    var temp = result[i];
+                    result[i] = result[maxIndex];
+                    result[maxIndex] = temp;
+                }
+            }
+
+            return View(result);
         }
     }
 }
