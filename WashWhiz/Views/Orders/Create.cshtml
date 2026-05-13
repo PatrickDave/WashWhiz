@@ -28,10 +28,13 @@
                         @* Email: show input for admins; for regular users submit a hidden field with session email *@
                         @if (isAdmin)
                         {
-                            <div class="mb-3">
+                            <div class="mb-3 position-relative">
                                 <label asp-for="UserEmail" class="form-label">Customer Email</label>
-                                <input asp-for="UserEmail" class="form-control" />
+                                <input asp-for="UserEmail" id="emailInput" autocomplete="off" class="form-control" />
                                 <span asp-validation-for="UserEmail" class="text-danger"></span>
+
+                                @* Suggestion dropdown container (vanilla) *@
+                                <div id="emailSuggestions" class="list-group position-absolute w-100" style="z-index:3000; display:none;"></div>
                             </div>
                         }
                         else
@@ -69,4 +72,89 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Email autocomplete for admin: simple, case-insensitive substring match suggestions from server
+        (function () {
+            var input = document.getElementById('emailInput');
+            var list = document.getElementById('emailSuggestions');
+            if (!input || !list) return;
+
+            var timer = null;
+
+            function clearList() {
+                list.innerHTML = '';
+                list.style.display = 'none';
+            }
+
+            function showSuggestions(items) {
+                list.innerHTML = '';
+                if (!items || items.length === 0) {
+                    clearList();
+                    return;
+                }
+                for (var i = 0; i < items.length; i++) {
+                    var it = document.createElement('button');
+                    it.type = 'button';
+                    it.className = 'list-group-item list-group-item-action';
+                    it.textContent = items[i];
+                    (function (value) {
+                        it.addEventListener('click', function () {
+                            input.value = value;
+                            clearList();
+                        });
+                    })(items[i]);
+                    list.appendChild(it);
+                }
+                list.style.display = 'block';
+            }
+
+            function fetchSuggestions(q) {
+                if (!q || q.trim() === '') {
+                    clearList();
+                    return;
+                }
+
+                var url = '/Laundry/EmailSuggestions?q=' + encodeURIComponent(q);
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                var data = JSON.parse(xhr.responseText);
+                                showSuggestions(data);
+                            } catch (e) {
+                                clearList();
+                            }
+                        } else {
+                            clearList();
+                        }
+                    }
+                };
+                xhr.send();
+            }
+
+            input.addEventListener('input', function () {
+                // debounce to avoid too many requests
+                if (timer) clearTimeout(timer);
+                var q = input.value;
+                timer = setTimeout(function () {
+                    fetchSuggestions(q);
+                }, 250);
+            });
+
+            // hide list when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!list.contains(e.target) && e.target !== input) {
+                    clearList();
+                }
+            });
+
+            // hide on blur (small delay to allow click)
+            input.addEventListener('blur', function () {
+                setTimeout(clearList, 150);
+            });
+        })();
+    </script>
 }

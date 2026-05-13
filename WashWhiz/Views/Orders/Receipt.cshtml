@@ -1,0 +1,119 @@
+﻿@model dynamic
+
+<style>
+    /* General receipt container */
+    .receipt {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background-color: #f9f9f9;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Header style */
+    .receipt-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+        .receipt-header h2 {
+            color: var(--wash-primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .receipt-header p {
+            font-size: 1.25rem;
+            color: #555;
+        }
+
+    /* Two-column layout */
+    .receipt-body {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+        .receipt-body .label {
+            font-weight: bold;
+            color: var(--wash-dark);
+            margin-bottom: 10px;
+            width: 45%;
+        }
+
+        .receipt-body .data {
+            text-align: right;
+            width: 45%;
+            color: #333;
+        }
+
+    /* Divider line */
+    .divider {
+        border-top: 1px solid #ddd;
+        margin: 20px 0;
+    }
+
+    /* Footer style */
+    .receipt-footer {
+        text-align: center;
+        margin-top: 30px;
+    }
+
+        .receipt-footer p {
+            font-size: 1rem;
+            color: #888;
+        }
+
+    /* Color variables */
+    :root {
+        --wash-primary: #0d6efd;
+        --wash-dark: #12355b;
+    }
+</style>
+
+<div class="receipt">
+    <!-- Header: WashWhiz and Order ID -->
+    <div class="receipt-header">
+        <h2>WashWhiz</h2>
+        <p><strong>Order Receipt</strong></p>
+        <p><strong>Order ID:</strong> @Model.OrderId</p>
+    </div>
+
+    <!-- Order Details (Two Columns) -->
+    <div class="receipt-body">
+        <div class="label">Customer Name:</div>
+        <div class="data">@Model.CustomerName</div>
+
+        <div class="label">Email:</div>
+        <div class="data">@Model.Email</div>
+
+        <div class="label">Service Type:</div>
+        <div class="data">@Model.ServiceType</div>
+
+        <div class="label">Weight:</div>
+        <div class="data">@Model.Weight kg</div>
+
+        <div class="label">Status:</div>
+        <div class="data">@Model.Status</div>
+
+        <div class="label">Fee:</div>
+        <div class="data">@Model.Fee</div>
+
+        <div class="label">Payment Amount:</div>
+        <div class="data">@Model.PaymentAmount</div>
+
+        <div class="label">Payment Date:</div>
+        <div class="data">@Model.PaymentDate</div>
+    </div>
+
+    <!-- Divider Line -->
+    <div class="divider"></div>
+
+    <!-- Footer -->
+    <div class="receipt-footer">
+        <p>Thank you for choosing WashWhiz!</p>
+    </div>
+</div>

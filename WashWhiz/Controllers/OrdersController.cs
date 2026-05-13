@@ -18,7 +18,6 @@ namespace WashWhiz.Controllers
 
         private bool IsLoggedIn()
         {
-            // Use UserEmail in session to determine logged-in user
             return !string.IsNullOrEmpty(HttpContext.Session.GetString("UserEmail")) ||
                    HttpContext.Session.GetString("UserRole") == "Admin";
         }
@@ -344,6 +343,173 @@ namespace WashWhiz.Controllers
             }
 
             return View(result);
+        }
+
+        // -----------------------
+        // New: email suggestions (admin autocomplete)
+        // -----------------------
+        [HttpGet]
+        [Route("EmailSuggestions")]
+        public IActionResult EmailSuggestions(string q)
+        {
+            var suggestions = new List<string>();
+
+            if (string.IsNullOrEmpty(q))
+            {
+                return Json(suggestions);
+            }
+
+            var query = q.Trim();
+
+            // explicit loop for curriculum alignment
+            foreach (var u in _context.Users)
+            {
+                if (string.IsNullOrEmpty(u.Email))
+                {
+                    continue;
+                }
+
+                // case-insensitive substring match
+                if (u.Email.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    suggestions.Add(u.Email);
+                }
+            }
+
+            return Json(suggestions);
+        }
+
+        // get order details for payment modal
+        [HttpGet]
+        [Route("GetOrderDetails")]
+        public IActionResult GetOrderDetails(int id)
+        {
+            LaundryOrder found = null;
+            foreach (var o in _context.Orders)
+            {
+                if (o.LaundryOrderId == id)
+                {
+                    found = o;
+                    break;
+                }
+            }
+
+            if (found == null)
+            {
+                return NotFound();
+            }
+
+            var fee = found.Weight * 30m;
+
+            var result = new
+            {
+                id = found.LaundryOrderId,
+                customerName = found.CustomerName,
+                email = found.UserEmail,
+                weight = found.Weight,
+                serviceType = found.ServiceType,
+                status = found.Status,
+                paid = found.Paid,
+                paymentAmount = found.PaymentAmount,
+                // Friendly formatted date for receipts (e.g. May 13, 2026 02:35 PM)
+                paymentDate = found.PaymentDate.HasValue ? found.PaymentDate.Value.ToString("MMMM dd, yyyy hh:mm tt") : null,
+                fee = fee
+            };
+
+            return Json(result);
+        }
+
+        // -----------------------
+        // New: process payment (admin)
+        // -----------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("PayOrder")]
+        public IActionResult PayOrder(int id, decimal cashReceived)
+        {
+            var userRole = HttpContext.Session.GetString("UserRole");
+            if (userRole != "Admin")
+            {
+                return Forbid();
+            }
+
+            LaundryOrder found = null;
+            foreach (var o in _context.Orders)
+            {
+                if (o.LaundryOrderId == id)
+                {
+                    found = o;
+                    break;
+                }
+            }
+
+            if (found == null)
+            {
+                return NotFound();
+            }
+
+            var fee = found.Weight * 30m;
+            var change = cashReceived - fee;
+
+            found.Paid = true;
+            found.PaymentAmount = cashReceived;
+            found.PaymentDate = DateTime.Now;
+
+            _context.SaveChanges();
+
+            var receipt = new
+            {
+                orderId = found.LaundryOrderId,
+                customerName = found.CustomerName,
+                email = found.UserEmail,
+                weight = found.Weight,
+                fee = fee,
+                cashReceived = cashReceived,
+                change = change,
+                // Friendly formatted date
+                paymentDate = found.PaymentDate.HasValue ? found.PaymentDate.Value.ToString("MMMM dd, yyyy hh:mm tt") : null
+            };
+
+            return Json(new { success = true, receipt = receipt });
+        }
+
+        [HttpGet]
+        [Route("GetReceipt")]
+        public IActionResult GetReceipt(int id)
+        {
+            // Get the order from the database using the provided ID
+            var order = _context.Orders.FirstOrDefault(o => o.LaundryOrderId == id);
+
+            if (order == null)
+            {
+                return NotFound(); // If the order is not found, return a 404 error.
+            }
+
+            // Check if the current user is authorized to view the receipt (based on role and ownership)
+            string userEmail = HttpContext.Session.GetString("UserEmail") ?? string.Empty;
+            string userRole = HttpContext.Session.GetString("UserRole");
+
+            if ((userRole == "Admin") || (userEmail == order.UserEmail))
+            {
+                // Generate receipt details
+                var receiptDetails = new
+                {
+                    OrderId = order.LaundryOrderId,
+                    CustomerName = order.CustomerName,
+                    Email = order.UserEmail,
+                    ServiceType = order.ServiceType,
+                    Weight = order.Weight,
+                    Status = order.Status,
+                    Fee = order.Weight * 30m,
+                    PaymentAmount = order.PaymentAmount,
+                    PaymentDate = order.PaymentDate?.ToString("MMMM dd, yyyy hh:mm tt")
+                };
+
+                // Return the receipt view with the details
+                return View("Receipt", receiptDetails);
+            }
+
+            return Forbid(); // If the user is not authorized, return a forbidden response.
         }
     }
 }

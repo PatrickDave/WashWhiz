@@ -34,7 +34,7 @@ namespace WashWhiz.Controllers
             if (role == "Admin")
             {
                 UserAccount adminUser = null;
-                // Use explicit loop instead of LINQ lambda to find admin
+
                 foreach (var u in _context.Users)
                 {
                     if (u.Username == username && u.Password == password && u.Role == "Admin")
@@ -54,7 +54,7 @@ namespace WashWhiz.Controllers
             else
             {
                 UserAccount user = null;
-                // Use explicit loop instead of LINQ lambda to find user
+ 
                 foreach (var u in _context.Users)
                 {
                     if (u.Email == email && u.Password == password)
@@ -68,7 +68,7 @@ namespace WashWhiz.Controllers
                 {
                     SetUserSession(user);
 
-                    // If a User somehow has an Admin role, send them to the Dashboard
+                    // if a users is an admin, redirect to admin dashboard, otherwise redirect to user dashboard
                     if (user.Role == "Admin")
                     {
                         return RedirectToAction("Index", "Orders");
@@ -78,7 +78,7 @@ namespace WashWhiz.Controllers
                 }
             }
 
-            // Build error message without ternary operator
+            // if you choose admin as admin in login the label for email will be username, otherwise it will be email.
             string identityLabel;
             if (role == "Admin")
             {
@@ -93,7 +93,7 @@ namespace WashWhiz.Controllers
             return View();
         }
 
-        // Helper method to keep your code clean
+        // stores a session for the logged in user so that other controllers can access the user's information and use it for ownership and authorization
         private void SetUserSession(UserAccount user)
         {
             HttpContext.Session.SetInt32("UserId", user.UserId);

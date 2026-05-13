@@ -11,15 +11,16 @@
 
 <div class="container mt-4">
 
+    @Html.AntiForgeryToken()
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-primary fw-bold">
             @(isAdmin ? "Admin Dashboard" : "My Orders")
         </h2>
 
-        @* Show New Laundry Load only to admins *@
         @if (isAdmin)
         {
-            <a href="/Laundry/NewOrder" class="btn btn-success shadow-sm">
+            <a asp-controller="Orders" asp-action="Create" class="btn btn-success shadow-sm">
                 + New Laundry Load
             </a>
         }
@@ -64,14 +65,14 @@
         </div>
     }
 
-    <form method="get" action="/Laundry/Dashboard" class="mb-4">
+    <form method="get" action="/Laundry/Dashboard" class="mb-4" id="filterForm">
         <div class="row g-2">
             <div class="col-md-8">
-                <input type="text" name="searchString" class="form-control" placeholder="Search by customer name..." />
+                <input id="liveSearch" type="text" name="searchString" class="form-control" placeholder="Search by customer name..." />
             </div>
 
             <div class="col-md-3">
-                <select name="statusFilter" class="form-select">
+                <select name="statusFilter" class="form-select" id="statusFilter">
                     <option value="">All Status</option>
                     <option value="Pending">Pending</option>
                     <option value="Washing">Washing</option>
@@ -80,7 +81,7 @@
             </div>
 
             <div class="col-md-1 d-grid">
-                <button class="btn btn-primary">Go</button>
+                <button id="statusGo" class="btn btn-primary" type="submit">Go</button>
             </div>
         </div>
     </form>
@@ -101,9 +102,11 @@
                     <tr>
                         <th>Customer Name</th>
                         <th>Weight</th>
+                        <th>Fee</th>
                         <th>Service</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Date</th>
+                        <th class="text-center">Paid</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -111,9 +114,11 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr class="order-row">
+                        var fee = item.Weight * 30m;
+                        <tr class="order-row" data-order-id="@item.LaundryOrderId">
                             <td class="fw-bold">@item.CustomerName</td>
                             <td>@item.Weight kg</td>
+                            <td>₱ @fee.ToString("F2")</td>
                             <td>@item.ServiceType</td>
 
                             <td class="timeline-cell">
@@ -139,68 +144,117 @@
                                 </div>
                             </td>
 
-                            <td class="text-center">@item.OrderDate.ToString("MMM dd, yyyy")</td>
+                            <td class="text-center">@item.OrderDate.ToString("MMMM dd, yyyy")</td>
+
+                            <td class="text-center">
+                                @if (item.Paid)
+                                {
+                                    <span class="badge bg-success">Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Unpaid</span>
+                                }
+                            </td>
 
                             <td class="actions-cell text-center">
-                                <div class="action-buttons">
+                                <div class="action-buttons d-flex flex-column align-items-center">
 
+                                    @* Admin actions *@
                                     @if (isAdmin)
                                     {
-                                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                            <input type="hidden" name="status" value="Pending" />
-                                            <button class="action-btn pending" type="submit" title="Set to Pending">P</button>
-                                        </form>
-
-                                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                            <input type="hidden" name="status" value="Washing" />
-                                            <button class="action-btn washing" type="submit" title="Set to Washing">W</button>
-                                        </form>
-
-                                        <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                            <input type="hidden" name="status" value="Ready" />
-                                            <button class="action-btn ready" type="submit" title="Set to Ready">R</button>
-                                        </form>
-
-                                        @* When Ready show Complete using existing tag-helper; otherwise use tag-helper Cancel/Delete *@
-                                        @if (item.Status == "Ready")
-                                        {
-                                            <form asp-controller="Orders"
-                                                  asp-action="CompleteOrder"
-                                                  asp-route-id="@item.LaundryOrderId"
-                                                  method="post"
-                                                  style="display:inline-block;">
-                                                @Html.AntiForgeryToken()
-                                                <button class="action-btn complete btn btn-sm btn-success" type="submit" title="Mark as Completed">
-                                                    <i class="bi bi-check-circle"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form asp-controller="Orders" asp-action="CancelOrder" method="post" onsubmit="return confirm('Delete order?');" style="display:inline-block;">
+                                        <div class="mb-1">
+                                            <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                                <button class="action-btn delete" type="submit" title="Delete Order">×</button>
+                                                <input type="hidden" name="status" value="Pending" />
+                                                <button class="action-btn pending" type="submit" title="Set to Pending">P</button>
                                             </form>
-                                        }
-                                    }
-                                    else if (item.Status == "Pending")
-                                    {
-                                        <form asp-controller="Orders" asp-action="CancelOrder" method="post" onsubmit="return confirm('Cancel order?');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@item.LaundryOrderId" />
-                                            <button class="btn btn-sm btn-danger" type="submit">Cancel</button>
-                                        </form>
+
+                                            <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                                <input type="hidden" name="status" value="Washing" />
+                                                <button class="action-btn washing" type="submit" title="Set to Washing">W</button>
+                                            </form>
+
+                                            <form asp-controller="Orders" asp-action="UpdateStatus" method="post" style="display:inline-block;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                                <input type="hidden" name="status" value="Ready" />
+                                                <button class="action-btn ready" type="submit" title="Set to Ready">R</button>
+                                            </form>
+                                        </div>
+
+                                        <div class="mb-1">
+                                            @* Cancel / Placeholder: ensure consistent vertical alignment *@
+                                            @if (item.Status == "Pending")
+                                            {
+                                                <form asp-controller="Orders" asp-action="CancelOrder" method="post" onsubmit="return confirm('Delete order?');" style="display:inline-block;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                                    <button class="action-btn delete" type="submit" title="Delete Order">×</button>
+                                                </form>
+                                            }
+                                            else if (item.Status == "Washing")
+                                            {
+                                                <button class="action-btn disabled" disabled title="Cannot cancel during washing">×</button>
+                                            }
+                                            else if (item.Status == "Ready")
+                                            {
+                                                <form asp-controller="Orders"
+                                                      asp-action="CompleteOrder"
+                                                      asp-route-id="@item.LaundryOrderId"
+                                                      method="post"
+                                                      style="display:inline-block;">
+                                                    @Html.AntiForgeryToken()
+                                                    <button class="action-btn complete btn btn-sm btn-success" type="submit" title="Mark as Completed">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+
+                                        <div>
+                                            @* Payment / Receipt button for admin *@
+                                            @if (!item.Paid)
+                                            {
+                                                <button class="btn btn-sm btn-primary ms-2 pay-btn" data-id="@item.LaundryOrderId" type="button">Pay</button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary ms-2 receipt-btn" data-id="@item.LaundryOrderId" type="button">Receipt</button>
+                                            }
+                                        </div>
                                     }
                                     else
                                     {
-                                        <span class="text-muted small">Locked</span>
+                                        @* User actions: keep alignment consistent, remove Unpaid from Actions column (Paid column already shows it) *@
+                                        <div class="mb-1">
+                                            @if (item.Status == "Pending")
+                                            {
+                                                <form asp-controller="Orders" asp-action="CancelOrder" method="post" onsubmit="return confirm('Cancel order?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@item.LaundryOrderId" />
+                                                    <button class="btn btn-sm btn-danger" type="submit">Cancel</button>
+                                                </form>
+                                            }
+                                            else if (item.Status == "Washing")
+                                            {
+                                                <button class="btn btn-sm btn-secondary" disabled>Cancel</button>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Locked</span>
+                                            }
+                                        </div>
+
+                                        <div>
+                                            @if (item.Paid)
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary ms-2 receipt-btn" data-id="@item.LaundryOrderId" type="button">Receipt</button>
+                                            }
+                                        </div>
                                     }
 
                                 </div>
@@ -215,8 +269,227 @@
 
 </div>
 
+@* Payment modal (admin) - reused for showing receipt *@
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="paymentModalLabel" class="modal-title">Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="paymentDetails" class="mb-3">
+                    <p><strong>Order:</strong> <span id="modalOrderId"></span></p>
+                    <p><strong>Customer:</strong> <span id="modalCustomer"></span></p>
+                    <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+                    <p><strong>Weight:</strong> <span id="modalWeight"></span> kg</p>
+                    <p><strong>Fee:</strong> ₱ <span id="modalFee"></span></p>
+                </div>
+
+                <div id="paymentFormSection" class="mt-3">
+                    <label class="form-label">Cash Received</label>
+                    <input id="cashReceived" type="number" step="0.01" class="form-control" />
+                </div>
+
+                <div id="receiptSection" style="display:none;" class="mt-3">
+                    <h5 class="text-primary">Receipt</h5>
+                    <div id="receiptContent" class="receipt-box small"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="payConfirmBtn" type="button" class="btn btn-success">Pay</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        // Live client-side search (instant, case-insensitive) by Customer Name.
+        (function () {
+            const input = document.getElementById('liveSearch');
+            const table = document.querySelector('.orders-table tbody');
+
+            if (!input || !table) return;
+
+            function filterRows() {
+                const q = input.value.trim().toLowerCase();
+                const rows = table.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    const nameCell = row.querySelector('td');
+                    const text = nameCell ? nameCell.textContent.trim().toLowerCase() : '';
+                    if (q === '' || text.indexOf(q) !== -1) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Instant filter while typing
+            input.addEventListener('input', function () {
+                filterRows();
+            });
+
+            // If form was submitted with a server-side search, pre-run filter on load
+            document.addEventListener('DOMContentLoaded', function () {
+                filterRows();
+            });
+        })();
+
+        // Payment / Receipt modal behavior
+        (function () {
+            const paymentModalEl = document.getElementById('paymentModal');
+            if (!paymentModalEl) return;
+
+            const modal = new bootstrap.Modal(paymentModalEl);
+            const modalOrderId = document.getElementById('modalOrderId');
+            const modalCustomer = document.getElementById('modalCustomer');
+            const modalEmail = document.getElementById('modalEmail');
+            const modalWeight = document.getElementById('modalWeight');
+            const modalFee = document.getElementById('modalFee');
+            const cashInput = document.getElementById('cashReceived');
+            const payBtn = document.getElementById('payConfirmBtn');
+            const receiptSection = document.getElementById('receiptSection');
+            const receiptContent = document.getElementById('receiptContent');
+            const paymentFormSection = document.getElementById('paymentFormSection');
+
+            // manage clicks on Pay / Receipt buttons
+            document.addEventListener('click', function (ev) {
+                const target = ev.target.closest('.pay-btn, .receipt-btn');
+                if (!target) return;
+
+                const id = target.getAttribute('data-id');
+                if (!id) return;
+
+                // load order details
+                fetch('/Laundry/GetOrderDetails?id=' + encodeURIComponent(id))
+                    .then(r => {
+                        if (!r.ok) throw new Error('Failed to load');
+                        return r.json();
+                    })
+                    .then(data => {
+                        modalOrderId.textContent = data.id;
+                        modalCustomer.textContent = data.customerName;
+                        modalEmail.textContent = data.email;
+                        modalWeight.textContent = data.weight;
+                        modalFee.textContent = parseFloat(data.fee).toFixed(2);
+
+                        // reset UI
+                        receiptSection.style.display = 'none';
+                        paymentFormSection.style.display = '';
+                        cashInput.value = '';
+                        payBtn.style.display = '';
+
+                        // if already paid or it's a Receipt button, show receipt only
+                        if (data.paid && target.classList.contains('receipt-btn')) {
+                            // render receipt from available fields
+                            const rec = [
+                                "Order ID: " + data.id,
+                                "Name: " + data.customerName,
+                                "Email: " + data.email,
+                                "Weight: " + data.weight + " kg",
+                                "Fee: ₱ " + parseFloat(data.fee).toFixed(2),
+                                "Cash Received: ₱ " + (data.paymentAmount ? parseFloat(data.paymentAmount).toFixed(2) : "0.00"),
+                                "Change: ₱ " + (data.paymentAmount ? (parseFloat(data.paymentAmount) - parseFloat(data.fee)).toFixed(2) : "0.00"),
+                                "Payment Date: " + (data.paymentDate || "")
+                            ].join("\n");
+
+                            receiptContent.textContent = rec;
+                            receiptSection.style.display = '';
+                            paymentFormSection.style.display = 'none';
+                            payBtn.style.display = 'none';
+                        }
+
+                        // show modal
+                        modal.show();
+                    })
+                    .catch(err => {
+                        alert('Unable to load order details.');
+                    });
+            });
+
+            // Pay button handler (AJAX post)
+            payBtn.addEventListener('click', function () {
+                const id = modalOrderId.textContent;
+                const cash = parseFloat(cashInput.value || '0');
+
+                if (isNaN(cash) || cash <= 0) {
+                    alert('Enter valid cash received.');
+                    return;
+                }
+
+                // get antiforgery token value from hidden input generated by @Html.AntiForgeryToken()
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenInput ? tokenInput.value : '';
+
+                const formData = new FormData();
+                formData.append('id', id);
+                formData.append('cashReceived', cash);
+
+                fetch('/Laundry/PayOrder', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': token
+                    },
+                    body: formData
+                })
+                    .then(r => {
+                        if (!r.ok) throw new Error('Payment failed');
+                        return r.json();
+                    })
+                    .then(result => {
+                        if (!result || !result.success) {
+                            alert('Payment failed.');
+                            return;
+                        }
+
+                        const rct = result.receipt;
+                        const recText = [
+                            "Order ID: " + rct.orderId,
+                            "Name: " + rct.customerName,
+                            "Email: " + rct.email,
+                            "Weight: " + rct.weight + " kg",
+                            "Fee: ₱ " + parseFloat(rct.fee).toFixed(2),
+                            "Cash Received: ₱ " + parseFloat(rct.cashReceived).toFixed(2),
+                            "Change: ₱ " + parseFloat(rct.change).toFixed(2),
+                            "Payment Date: " + (rct.paymentDate || "")
+                        ].join("\n");
+
+                        receiptContent.textContent = recText;
+                        receiptSection.style.display = '';
+                        paymentFormSection.style.display = 'none';
+                        payBtn.style.display = 'none';
+
+                        // update the table row: mark Paid badge and switch button to Receipt
+                        const row = document.querySelector('tr[data-order-id="' + rct.orderId + '"]');
+                        if (row) {
+                            const paidCell = row.querySelector('td:nth-child(7)'); // Paid column position
+                            if (paidCell) {
+                                paidCell.innerHTML = '<span class="badge bg-success">Paid</span>';
+                            }
+
+                            // find pay button and replace with receipt button
+                            const oldBtn = row.querySelector('.pay-btn');
+                            if (oldBtn) {
+                                const newBtn = document.createElement('button');
+                                newBtn.type = 'button';
+                                newBtn.className = 'btn btn-sm btn-outline-secondary ms-2 receipt-btn';
+                                newBtn.setAttribute('data-id', rct.orderId);
+                                newBtn.textContent = 'Receipt';
+                                oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        alert('Payment request failed.');
+                    });
+            });
+        })();
+
+        // toast remover
         setTimeout(() => {
             const toast = document.getElementById("successToast");
             if (toast) toast.remove();

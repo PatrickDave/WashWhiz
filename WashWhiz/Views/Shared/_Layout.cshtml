@@ -13,7 +13,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - WashWhiz</title>
-    <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WashWhiz.styles.css" asp-append-version="true" />
@@ -40,7 +39,7 @@
                         @if (userRole == "Admin")
                         {
                             <li class="nav-item">
-                                <a class="nav-link fw-bold text-primary" href="/Laundry/Dashboard">
+                                <a class="nav-link fw-bold text-primary" asp-controller="Orders" asp-action="Index">
                                     Admin Dashboard
                                 </a>
                             </li>
@@ -82,13 +81,13 @@
                                         @if (userRole == "Admin")
                                         {
                                             <li>
-                                                <a class="dropdown-item" href="/Laundry/Dashboard">
+                                                <a class="dropdown-item" asp-controller="Orders" asp-action="Index">
                                                     Manage Orders
                                                 </a>
                                             </li>
 
                                             <li>
-                                                <a class="dropdown-item" href="/Laundry/History">
+                                                <a class="dropdown-item" asp-controller="Orders" asp-action="History">
                                                     Order History
                                                 </a>
                                             </li>
@@ -96,19 +95,19 @@
                                         else
                                         {
                                             <li>
-                                                <a class="dropdown-item" href="/Account/Profile">
+                                                <a class="dropdown-item" asp-controller="Account" asp-action="Profile">
                                                     Edit Profile
                                                 </a>
                                             </li>
 
                                             <li>
-                                                <a class="dropdown-item" href="/Laundry/Dashboard">
+                                                <a class="dropdown-item" asp-controller="Orders" asp-action="Index">
                                                     My Orders
                                                 </a>
                                             </li>
 
                                             <li>
-                                                <a class="dropdown-item" href="/Laundry/History">
+                                                <a class="dropdown-item" asp-controller="Orders" asp-action="History">
                                                     Order History
                                                 </a>
                                             </li>
@@ -155,6 +154,25 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+      // Remove duplicate/backdrop leftovers when modals show/hide
+      document.addEventListener('shown.bs.modal', function () {
+        var backs = document.querySelectorAll('.modal-backdrop');
+        if (backs.length > 1) {
+          for (var i = 0; i < backs.length - 1; i++) {
+            if (backs[i] && backs[i].parentNode) backs[i].parentNode.removeChild(backs[i]);
+          }
+        }
+      });
+
+      document.addEventListener('hidden.bs.modal', function () {
+        var backs = document.querySelectorAll('.modal-backdrop');
+        backs.forEach(function (b) { if (b && b.parentNode) b.parentNode.removeChild(b); });
+      });
+    </script>
 </body>
 </html>

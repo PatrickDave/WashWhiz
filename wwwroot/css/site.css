@@ -1,0 +1,51 @@
+/* Fix: allow dropdowns inside orders table to escape and appear on top */
+.table-responsive.orders-table,
+.table-responsive .orders-table {
+  overflow: visible !important;
+}
+
+/* Target dropdowns inside tables to avoid global overrides */
+.orders-table .dropdown-menu,
+.table .dropdown-menu {
+  position: absolute;
+  z-index: 3000 !important;
+}
+
+/* Keep timeline visuals under dropdowns */
+.order-timeline,
+.timeline-step,
+.timeline-circle,
+.timeline-line {
+  z-index: 1;
+}
+
+/* Receipt box style and disabled button styles */
+
+.receipt-box {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid rgba(13,110,253,0.08);
+  padding: 12px;
+  border-radius: 8px;
+  color: #12355b;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  white-space: pre-wrap;
+}
+
+.action-btn.disabled,
+.action-btn[disabled],
+button.btn-secondary[disabled] {
+  background: #e9ecef !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* Keep action buttons vertically aligned */
+.action-buttons {
+  min-height: 120px; /* reserve vertical space so alignment is stable */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+}

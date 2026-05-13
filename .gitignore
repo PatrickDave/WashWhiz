@@ -1,8 +1,1 @@
 .vs/
-bin/
-obj/
-*.user
-*.suo
-*.db
-*.log
-node_modules/

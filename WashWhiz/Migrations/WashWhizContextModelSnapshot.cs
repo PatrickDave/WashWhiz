@@ -40,6 +40,15 @@ namespace WashWhiz.Migrations
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("Paid")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("PaymentAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ServiceType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

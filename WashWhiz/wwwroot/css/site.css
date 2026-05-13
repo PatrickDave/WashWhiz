@@ -142,11 +142,11 @@ html, body {
     border: 1px solid #d6e6f7;
 }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: var(--wash-primary);
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-    }
+.form-control:focus,
+.form-select:focus {
+     border-color: var(--wash-primary);
+     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
 
 .table {
     background: white;
@@ -176,6 +176,7 @@ footer {
 .dropdown-menu {
     padding: 10px;
     min-width: 190px;
+    z-index: 2500;
 }
 
 .dropdown-item {
@@ -485,6 +486,7 @@ main {
         font-size: 16px;
         box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
         border: 2px solid white;
+        z-index: 5;
     }
 
 /* Clean orders table alignment */
@@ -542,7 +544,7 @@ main {
     position: fixed;
     right: 30px;
     bottom: 90px;
-    z-index: 99999;
+    z-index: 100;
     background: linear-gradient(135deg, #198754, #4dd4ac);
     color: white;
     padding: 16px 22px;
@@ -680,7 +682,7 @@ main {
     position: fixed;
     right: 30px;
     bottom: 90px;
-    z-index: 99999;
+    z-index: 100;
     background: linear-gradient(135deg, #198754, #4dd4ac);
     color: white;
     padding: 16px 22px;
@@ -723,3 +725,45 @@ main {
     border: none;
     font-weight: bold;
 }
+
+/* Normalize stacking so dropdowns/suggestions appear above timeline but below modals */
+
+/* Lower page containers so they don't accidentally block absolutely positioned children */
+.hero-section,
+.feature-card,
+.card,
+.navbar,
+footer,
+main {
+  z-index: 1; /* previously 2 */
+  position: relative; /* keep layout but simple stacking context */
+}
+
+/* Timeline stays low */
+.order-timeline,
+.timeline-step,
+.timeline-circle,
+.timeline-line {
+  z-index: 1;
+  position: relative;
+}
+
+/* Email suggestions and table dropdowns must appear above timeline/cards */
+#emailSuggestions,
+.orders-table .dropdown-menu,
+.table .dropdown-menu {
+  position: absolute;
+}
+
+/* Toasts should appear above dropdowns but below modals */
+.custom-toast {
+  z-index: 2500 !important;
+}
+
+/* Modal must be top-most: backdrop then modal */
+.modal-backdrop {
+  z-index: -5;
+}
+.modal-content {
+  z-index: 99999 !important;
+}ADMINGPTGPT2026.

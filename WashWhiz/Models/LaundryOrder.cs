@@ -24,5 +24,10 @@ namespace WashWhiz.Models
 
         // Some controllers/views expect DateCreated
         public DateTime DateCreated { get; set; } = DateTime.Now;
+
+        // Payment fields
+        public bool Paid { get; set; } = false;
+        public decimal PaymentAmount { get; set; } = 0m;
+        public DateTime? PaymentDate { get; set; }
     }
 }
